@@ -1,15 +1,36 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"study-golang-backend/internal/auth"
+	"study-golang-backend/internal/db"
 	"study-golang-backend/internal/item"
 	"study-golang-backend/internal/user"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: No .env file found")
+	}
+
+	// Initialize Database
+	database := db.InitDB()
+	// Auto Migrate database: Check has this table yes->skip, no->create
+	err = database.AutoMigrate(&user.User{})
+	if err != nil {
+		log.Fatal("Failed to auto migrate database", err)
+	}
+	err = database.AutoMigrate(&item.Item{})
+	if err != nil {
+		log.Fatal("Failed to auto migrate database", err)
+	}
+
+	// JWT Secret Key: Must be stored securely in Production
 	jwtSecret := []byte("my_super_secret_dev_key")
 
 	//Init Gin router
@@ -23,12 +44,12 @@ func main() {
 	})
 
 	// Setup User authentication
-	userRepo := user.NewMemoryRepository()
+	userRepo := user.NewPostgresRepository(database)
 	userHandler := user.NewHandler(userRepo, jwtSecret)
 	userHandler.RegisterRouter(r.Group(""))
 
 	// Initial example Data
-	itemRepo := item.NewMemoryRepository()
+	itemRepo := item.NewPostgresRepository(database)
 	// Initial Handler & inject initial Data(itemRepo)
 	itemHandler := item.NewHandler(itemRepo)
 
@@ -39,4 +60,3 @@ func main() {
 
 	r.Run(":8080")
 }
-

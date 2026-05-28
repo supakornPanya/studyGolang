@@ -39,7 +39,11 @@ func (h *Handler) CreateItem(c *gin.Context) {
 		return
 	}
 
-	newItem := h.repo.Create(payload.SKU, payload.Name, payload.Quantity, payload.Price)
+	newItem, err := h.repo.Create(payload.SKU, payload.Name, payload.Quantity, payload.Price)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "Internal Server Error", "message": err.Error()})
+		return
+	}
 
 	//Response
 	c.JSON(http.StatusCreated, gin.H{
@@ -50,7 +54,11 @@ func (h *Handler) CreateItem(c *gin.Context) {
 }
 
 func (h *Handler) GetAllItems(c *gin.Context) {
-	items := h.repo.GetAll()
+	items, err := h.repo.GetAll()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "Internal Server Error", "message": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"status": "Ok", "items": items})
 }
 

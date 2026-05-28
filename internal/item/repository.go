@@ -1,100 +1,84 @@
 package item
 
 import (
-	"errors"
-	"sync"
+	"gorm.io/gorm"
 )
 
 // Repository defines the interface for item storage operations.
 type Repository interface {
-	Create(sku string, name string, qty int, price float64) Item
-	GetAll() []Item
-	GetByID(id int) (Item, error)
-	Update(id int, sku string, name string, qty int, price float64) (Item, error)
+	Create(sku string, name string, qty int, price float64) (*Item, error)
+	GetAll() ([]*Item, error)
+	GetByID(id int) (*Item, error)
+	Update(id int, sku string, name string, qty int, price float64) (*Item, error)
 	Delete(id int) error
 }
 
-// Create struct
-type MemoryRepository struct {
-	mu     sync.RWMutex
-	items  []Item
-	nextID int
+type PostgresRepository struct {
+	db *gorm.DB
 }
 
-// Create NewRepository
-func NewMemoryRepository() *MemoryRepository {
-	return &MemoryRepository{
-		nextID: 3,
-		items: []Item{
-			{ID: 1, SKU: "SKU001", Name: "Item 1", Quantity: 10, Price: 100},
-			{ID: 2, SKU: "SKU002", Name: "Item 2", Quantity: 20, Price: 200},
-		},
-	}
+// func return db
+func NewPostgresRepository(db *gorm.DB) Repository {
+	return &PostgresRepository{db: db}
 }
 
-func (r *MemoryRepository) Create(sku string, name string, qty int, price float64) Item {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
+// Create
+func (r *PostgresRepository) Create(sku string, name string, qty int, price float64) (*Item, error) {
 	newItem := Item{
-		ID:       r.nextID,
 		SKU:      sku,
 		Name:     name,
 		Quantity: qty,
 		Price:    price,
 	}
-
-	r.items = append(r.items, newItem)
-	r.nextID++
-	return newItem
+	err := r.db.Create(&newItem).Error
+	return &newItem, err
 }
 
-func (r *MemoryRepository) GetAll() []Item {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	return r.items
-}
-func (r *MemoryRepository) GetByID(id int) (Item, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	for _, item := range r.items {
-		if item.ID == id {
-			return item, nil
-		}
-	}
-	return Item{}, errors.New("item not found")
-}
-func (r *MemoryRepository) Update(id int, sku string, name string, qty int, price float64) (Item, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	for i, item := range r.items {
-		if item.ID == id {
-			if name != "" {
-				r.items[i].Name = name
-			}
-			if sku != "" {
-				r.items[i].SKU = sku
-			}
-			if qty > 0 {
-				r.items[i].Quantity = qty
-			}
-			if price > 0 {
-				r.items[i].Price = price
-			}
-			return r.items[i], nil
-		}
-	}
-	return Item{}, errors.New("item not found")
+// GetAll
+func (r *PostgresRepository) GetAll() ([]*Item, error) {
+	var items []*Item
+	err := r.db.Find(&items).Error
+	return items, err
 }
 
-func (r *MemoryRepository) Delete(id int) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	for i, item := range r.items {
-		if item.ID == id {
-			r.items = append(r.items[:i], r.items[i+1:]...)
-			return nil
-		}
+// Get by ID
+func (r *PostgresRepository) GetByID(id int) (*Item, error) {
+	var item Item
+	err := r.db.First(&item, id).Error
+	if err != nil {
+		return nil, err
 	}
-	return errors.New("item not found")
+	return &item, nil
+}
+
+// Update
+func (r *PostgresRepository) Update(id int, sku string, name string, qty int, price float64) (*Item, error) {
+	var item Item
+	err := r.db.First(&item, id).Error
+	if err != nil {
+		return nil, err
+	}
+	if sku != "" {
+		item.SKU = sku
+	}
+	if name != "" {
+		item.Name = name
+	}
+	if qty != 0 {
+		item.Quantity = qty
+	}
+	if price != 0 {
+		item.Price = price
+	}
+	return &item, r.db.Save(&item).Error
+}
+
+// Delete
+func (r *PostgresRepository) Delete(id int) error {
+	var item Item
+	err := r.db.First(&item, id).Error
+	if err != nil {
+		return err
+	}
+	return r.db.Delete(&item).Error
 }
