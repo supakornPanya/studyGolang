@@ -48,8 +48,10 @@ func main() {
 	userHandler := user.NewHandler(userRepo, jwtSecret)
 	userHandler.RegisterRouter(r.Group(""))
 
-	// Initial example Data
-	itemRepo := item.NewPostgresRepository(database)
+	// Initial Item
+	rdbClient := db.InitRedis()
+	postresItemRepo := item.NewPostgresRepository(database)
+	itemRepo := item.NewCachedRepository(postresItemRepo, rdbClient)
 	// Initial Handler & inject initial Data(itemRepo)
 	itemHandler := item.NewHandler(itemRepo)
 
