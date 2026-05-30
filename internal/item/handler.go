@@ -26,6 +26,18 @@ func (h *Handler) RegisterRouter(rg *gin.RouterGroup) {
 	}
 }
 
+// CreateItem godoc
+// @Summary      Create a new item
+// @Description  Adds a new item to the inventory
+// @Tags         items
+// @Accept       json
+// @Produce      json
+// @Param        request  body      CreateItemPayload  true  "Item details"
+// @Success      201      {object}  Item
+// @Failure      400      {object}  map[string]string "Bad Request"
+// @Failure      500      {object}  map[string]string "Internal Server Error"
+// @Security     BearerAuth
+// @Router       /items [post]
 func (h *Handler) CreateItem(c *gin.Context) {
 	var payload CreateItemPayload
 
@@ -53,6 +65,15 @@ func (h *Handler) CreateItem(c *gin.Context) {
 	})
 }
 
+// GetAllItems godoc
+// @Summary      Get all items
+// @Description  Retrieves a list of all items in the inventory
+// @Tags         items
+// @Produce      json
+// @Success      200  {array}   Item
+// @Failure      500  {object}  map[string]string "Internal Server Error"
+// @Security     BearerAuth
+// @Router       /items [get]
 func (h *Handler) GetAllItems(c *gin.Context) {
 	items, err := h.repo.GetAll()
 	if err != nil {
@@ -62,6 +83,17 @@ func (h *Handler) GetAllItems(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "Ok", "items": items})
 }
 
+// GetItemByID godoc
+// @Summary      Get item by ID
+// @Description  Retrieves a single item by its unique ID
+// @Tags         items
+// @Produce      json
+// @Param        id   path      int  true  "Item ID"
+// @Success      200  {object}  Item
+// @Failure      400  {object}  map[string]string "Bad Request"
+// @Failure      404  {object}  map[string]string "Not Found"
+// @Security     BearerAuth
+// @Router       /items/{id} [get]
 func (h *Handler) GetItemByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -76,6 +108,20 @@ func (h *Handler) GetItemByID(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "Ok", "item": item})
 }
+
+// UpdateItem godoc
+// @Summary      Update an item
+// @Description  Updates the details of an existing item
+// @Tags         items
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Item ID"
+// @Param        request  body      UpdateItemPayload  true  "Updated item details"
+// @Success      200  {object}  Item
+// @Failure      400  {object}  map[string]string "Bad Request"
+// @Failure      404  {object}  map[string]string "Not Found"
+// @Security     BearerAuth
+// @Router       /items/{id} [put]
 func (h *Handler) UpdateItem(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -95,6 +141,18 @@ func (h *Handler) UpdateItem(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "Ok", "message": "Item updated successfully", "data": updated})
 }
+
+// DeleteItem godoc
+// @Summary      Delete an item
+// @Description  Removes an item from the inventory by its ID
+// @Tags         items
+// @Produce      json
+// @Param        id   path      int  true  "Item ID"
+// @Success      200  {string}  string "Item deleted successfully"
+// @Failure      400  {object}  map[string]string "Bad Request"
+// @Failure      404  {object}  map[string]string "Not Found"
+// @Security     BearerAuth
+// @Router       /items/{id} [delete]
 func (h *Handler) DeleteItem(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

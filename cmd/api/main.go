@@ -2,16 +2,28 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"study-golang-backend/internal/auth"
 	"study-golang-backend/internal/db"
 	"study-golang-backend/internal/item"
 	"study-golang-backend/internal/user"
 
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "study-golang-backend/docs"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
+// @title           Study Golang Backend API
+// @version         1.0
+// @description     This is a sample backend API using Gin, PostgreSQL, and Redis.
+// @host            localhost:8080
+// @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @description     Type "Bearer " followed by your JWT token.
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -36,12 +48,8 @@ func main() {
 	//Init Gin router
 	r := gin.Default()
 
-	r.GET("/status", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "Ok",
-			"message": "Go Backend with Gin is running!",
-		})
-	})
+	// Swagger Documentation
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Setup User authentication
 	userRepo := user.NewPostgresRepository(database)

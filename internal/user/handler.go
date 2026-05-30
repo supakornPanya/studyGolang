@@ -26,6 +26,17 @@ type authRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// Register godoc
+// @Summary      Register a new user
+// @Description  Creates a new user profile with a hashed password
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      authRequest  true  "User registration credentials"
+// @Success      201      {string}  string "User registered successfully"
+// @Failure      400      {object}  map[string]string "error: bad request"
+// @Failure      409      {object}  map[string]string "error: user conflict"
+// @Router       /register [post]
 func (h *Handler) Register(c *gin.Context) {
 	var req authRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -57,6 +68,17 @@ func (h *Handler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
+// Login godoc
+// @Summary      Login user
+// @Description  Authenticates a user and returns a JWT token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      authRequest  true  "User login credentials"
+// @Success      200      {string}  string "jwt_token_string"
+// @Failure      400      {object}  map[string]string "error: bad request"
+// @Failure      410      {object}  map[string]string "error: invalid username or password"
+// @Router       /login [post]
 func (h *Handler) Login(c *gin.Context) {
 	var req authRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
