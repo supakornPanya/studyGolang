@@ -473,8 +473,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "This is a sample backend API using Gin, PostgreSQL, and Redis.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	// LeftDelim:        "{{",
-	// RightDelim:       "}}",
+	//LeftDelim:        "{{",
+	//RightDelim:       "}}",
 }
 
 func init() {
