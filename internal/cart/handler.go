@@ -3,6 +3,7 @@ package cart
 import (
 	"net/http"
 	"strconv"
+	"study-golang-backend/internal/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,11 +19,11 @@ func NewHandler(repo Repository) *Handler {
 func (h *Handler) RegisterRouter(rg *gin.RouterGroup) {
 	items := rg.Group("/items")
 	{
-		items.POST("/", h.CreateItem)
-		items.GET("/", h.GetAllItems)
-		items.GET("/:id", h.GetItemByID)
-		items.PUT("/:id", h.UpdateItem)
-		items.DELETE("/:id", h.DeleteItem)
+		items.POST("/", auth.RequirePermission("can_write"), h.CreateItem)
+		items.GET("/", auth.RequirePermission("can_read"), h.GetAllItems)
+		items.GET("/:id", auth.RequirePermission("can_read"), h.GetItemByID)
+		items.PUT("/:id", auth.RequirePermission("can_update"), h.UpdateItem)
+		items.DELETE("/:id", auth.RequirePermission("can_delete"), h.DeleteItem)
 	}
 }
 

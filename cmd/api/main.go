@@ -2,10 +2,13 @@ package main
 
 import (
 	"log"
+	"study-golang-backend/internal/auth"
 	"study-golang-backend/internal/cart"
 	"study-golang-backend/internal/db"
+	"study-golang-backend/internal/user"
 
 	_ "study-golang-backend/docs"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
@@ -30,10 +33,17 @@ func main() {
 	// Initialize Database
 	database := db.InitDB()
 	// Auto Migrate database: Check has this table yes->skip, no->create
+	err = database.AutoMigrate(&user.User{})
+	if err != nil {
+		log.Fatal("Failed to auto migrate database", err)
+	}
 	err = database.AutoMigrate(&cart.Item{})
 	if err != nil {
 		log.Fatal("Failed to auto migrate database", err)
 	}
+
+	// Secret Key For JWT
+	jwtSecret := []byte("yeahhhh_this_is_super_super_ummmm_secret_key_right?")
 
 	//Init Gin router
 	r := gin.Default()
@@ -41,7 +51,12 @@ func main() {
 	// Swagger Documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Initial Item
+	// Initial User
+	userRepo := user.NewPostgresRepository(database)
+	userHandler := user.NewHandler(userRepo, jwtSecret)
+	userHandler.RegisterRouter(r.Group(""))
+
+	// Initial Cart
 	rdbClient := db.InitRedis()
 	postresCartRepo := cart.NewPostgresRepository(database)
 	cartRepo := cart.NewCachedRepository(postresCartRepo, rdbClient)
@@ -50,7 +65,7 @@ func main() {
 
 	// Register Router secured by AuthMiddleware
 	protected := r.Group("")
-	// protected.Use(auth.AuthMiddleware(jwtSecret))
+	protected.Use(auth.AuthMiddleware(jwtSecret))
 	cartHandler.RegisterRouter(protected)
 
 	r.Run(":8080")
