@@ -1,4 +1,4 @@
-package item
+package cart
 
 // Create a struct for items
 type Item struct {

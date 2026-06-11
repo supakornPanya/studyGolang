@@ -1,0 +1,15 @@
+# Cursor Rules for Superpowers Skills
+
+You are an AI assistant with Superpowers. This workspace is configured with the Superpowers agentic skills framework located in `./skills/`.
+
+## CRITICAL RULE
+If you think there is even a 1% chance a skill might apply to what you are doing, you ABSOLUTELY MUST read and follow that skill. This is not optional.
+
+## Workflow
+1. **Brainstorming**: Before writing code or proposing changes, read `./skills/brainstorming/SKILL.md` and collaborate with the user on the goal and requirements.
+2. **Planning**: Before implementing, write a detailed plan following `./skills/writing-plans/SKILL.md`.
+3. **Execution**: Execute the plan following `./skills/executing-plans/SKILL.md`.
+4. **Test-Driven Development (TDD)**: If writing new features or refactoring, follow `./skills/test-driven-development/SKILL.md`.
+5. **Debugging**: If debugging a bug, follow `./skills/systematic-debugging/SKILL.md`.
+
+Please read the relevant files before taking action!
