@@ -1,6 +1,6 @@
-# Custom Authentication & Authorization System Design
+# Custom Authentication & Authorization System Design (Simplified)
 
-This document details the direct authentication system featuring local registration, a two-tier token exchange (Parent Token and Local Session tokens), stateless JWT validation, and custom permission guards.
+This document details the simplified authentication and authorization system featuring local registration, username/password login, stateless JWT validation containing user permissions, and custom permission guards.
 
 ---
 
@@ -25,7 +25,7 @@ type User struct {
 ## 2. API Endpoints
 
 ### A. `POST /register`
-* **Purpose**: Register a new user and return a signed Parent Token (simulating the external gateway).
+* **Purpose**: Register a new user with safe default permissions.
 * **Payload**:
   ```json
   {
@@ -34,69 +34,50 @@ type User struct {
   }
   ```
 * **Process**:
-  1. Hashing the password using `bcrypt`.
-  2. Saving the user with default permissions (`CanRead = true`, others `false`).
-  3. Generating a signed **Parent Token** (JWT) containing `username` and `id` claims.
-* **Response**: `201 Created` with the parent token.
-
-### B. `POST /token`
-* **Purpose**: Exchange the parent token for local session tokens.
-* **Headers**: `X-Access-Token: <Parent JWT>`
-* **Process**:
-  1. Structurally decode and verify the Parent Token signature.
-  2. Fetch the user details and permissions from the database.
-  3. Generate and return a local **Access Token** and **Refresh Token** pair.
-* **Response**: `200 OK` returning:
+  1. Hash the password using `bcrypt`.
+  2. Save the user to the database with default permissions (`CanRead = true`, others `false`).
+* **Response**: `201 Created` with a success message:
   ```json
   {
-    "access_token": "<Local Access JWT>",
-    "refresh_token": "<Local Refresh JWT>"
+    "status": "Created",
+    "message": "User registered successfully"
   }
   ```
 
-### C. `POST /refresh-token`
-* **Purpose**: Rotate expired access tokens using the local refresh token.
+### B. `POST /login`
+* **Purpose**: Authenticate user credentials and return a signed JWT token containing their permissions.
 * **Payload**:
   ```json
   {
-    "refresh_token": "<Local Refresh JWT>"
+    "username": "example",
+    "password": "securepassword"
   }
   ```
 * **Process**:
-  1. Verify the signature, expiry, and check if `token_use` is `"refresh"`.
-  2. If expired or invalid, return `401 Unauthorized`.
-  3. If valid, issue a new access token and a rotated refresh token.
-* **Response**: `200 OK` with the new token pair.
+  1. Retrieve user from the database by `username`.
+  2. Verify the submitted password against the `PasswordHash` using `bcrypt`.
+  3. Generate and return a signed JWT token containing the user's identity and permission claims.
+* **Response**: `200 OK` returning:
+  ```json
+  {
+    "status": "Ok",
+    "token": "<JWT Token>"
+  }
+  ```
 
 ---
 
-## 3. JWT Claims & Tokens
+## 3. JWT Claims
 
-* **Parent Token Claims**:
+* **Session Token Claims** (includes embedded permissions):
   ```go
-  type ParentClaims struct {
-  	Username string `json:"username"`
-  	jwt.RegisteredClaims
-  }
-  ```
-* **Local Session Access Token Claims** (includes embedded permissions):
-  ```go
-  type AccessClaims struct {
-  	Username   string `json:"username"`
-  	UserID     string `json:"user_id"`
-  	CanRead    bool   `json:"can_read"`
-  	CanWrite   bool   `json:"can_write"`
-  	CanUpdate  bool   `json:"can_update"`
-  	CanDelete  bool   `json:"can_delete"`
-  	TokenUse   string `json:"token_use"` // Must be "access"
-  	jwt.RegisteredClaims
-  }
-  ```
-* **Local Session Refresh Token Claims**:
-  ```go
-  type RefreshClaims struct {
-  	Username string `json:"username"`
-  	TokenUse string `json:"token_use"` // Must be "refresh"
+  type Claims struct {
+  	Username  string `json:"username"`
+  	UserID    string `json:"user_id"`
+  	CanRead   bool   `json:"can_read"`
+  	CanWrite  bool   `json:"can_write"`
+  	CanUpdate bool   `json:"can_update"`
+  	CanDelete bool   `json:"can_delete"`
   	jwt.RegisteredClaims
   }
   ```
@@ -107,10 +88,10 @@ type User struct {
 
 1. **`AuthMiddleware`**:
    * Intercepts incoming requests on protected endpoints.
-   * Extracts the local Access Token from `Authorization: Bearer <Access JWT>`.
-   * Verifies the token signature, check expiration, and validates `TokenUse == "access"`.
-   * Inject claims into the Gin context (e.g. `c.Set("claims", claims)`).
+   * Extracts the JWT from `Authorization: Bearer <JWT>`.
+   * Verifies the token signature and expiration.
+   * Inject claims into the Gin context (e.g. `c.Set("username", claims.Username)`, `c.Set("can_read", claims.CanRead)`).
 
-2. **Route Guards (e.g. `RequirePermission(permissionName string)`)**:
+2. **Route Guards (e.g. `RequirePermission(permissionField string)`)**:
    * Wrap handlers to read the permission flags stored in the Gin context.
-   * If the flag (e.g. `CanWrite`) is `false`, immediately return `403 Forbidden`.
+   * If the specified flag (e.g. `can_write`) is `false`, return `403 Forbidden`.
