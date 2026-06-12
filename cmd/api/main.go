@@ -1,10 +1,12 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
 	"study-golang-backend/internal/auth"
 	"study-golang-backend/internal/cart"
 	"study-golang-backend/internal/db"
+	"study-golang-backend/internal/logger"
 	"study-golang-backend/internal/user"
 
 	_ "study-golang-backend/docs"
@@ -25,28 +27,37 @@ import (
 // @name            Authorization
 // @description     Type "Bearer " followed by your JWT token.
 func main() {
+	logger.InitLogger()
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Warning: No .env file found")
+		slog.Warn("No .env file found")
 	}
 
 	// Initialize Database
-	database := db.InitDB()
 	// Auto Migrate database: Check has this table yes->skip, no->create
+	database := db.InitDB()
 	err = database.AutoMigrate(&user.User{})
 	if err != nil {
-		log.Fatal("Failed to auto migrate database", err)
+		slog.Error("Failed to auto migrate database", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 	err = database.AutoMigrate(&cart.Item{})
 	if err != nil {
-		log.Fatal("Failed to auto migrate database", err)
+		slog.Error("Failed to auto migrate database", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	// Secret Key For JWT
-	jwtSecret := []byte("yeahhhh_this_is_super_super_ummmm_secret_key_right?")
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		slog.Error("JWT_SECRET not found in .env file")
+		os.Exit(1)
+	}
+	jwtSecret := []byte(secret)
 
-	//Init Gin router
-	r := gin.Default()
+	//Init Gin router & Register logger middleware
+	r := gin.New()
+	r.Use(logger.LoggerMiddleware(), gin.Recovery())
 
 	// Swagger Documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
