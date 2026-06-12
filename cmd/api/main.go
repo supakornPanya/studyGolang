@@ -11,6 +11,7 @@ import (
 
 	_ "study-golang-backend/docs"
 
+	_ "study-golang-backend/docs"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
