@@ -4,12 +4,11 @@ import (
 	"log/slog"
 	"os"
 	"study-golang-backend/internal/auth"
-	"study-golang-backend/internal/cart"
 	"study-golang-backend/internal/db"
 	"study-golang-backend/internal/logger"
-	"study-golang-backend/internal/user"
 	"study-golang-backend/internal/domain/entity"
 	"study-golang-backend/internal/domain/repository"
+	"study-golang-backend/internal/delivery/http"
 
 	_ "study-golang-backend/docs"
 
@@ -67,15 +66,14 @@ func main() {
 
 	// Initial User
 	userRepo := repository.NewUserPostgreRepository(database)
-	userHandler := user.NewHandler(userRepo, jwtSecret)
+	userHandler := http.NewUserHandler(userRepo, jwtSecret)
 	userHandler.RegisterRouter(r.Group(""))
 
 	// Initial Cart
 	rdbClient := db.InitRedis()
 	postresCartRepo := repository.NewCartPostgresRepository(database)
 	cartRepo := repository.NewCartCachedRepository(postresCartRepo, rdbClient)
-	// Initial Handler & inject initial Data(cartRepo)
-	cartHandler := cart.NewHandler(cartRepo)
+	cartHandler := http.NewCartHandler(cartRepo)
 
 	// Register Router secured by AuthMiddleware
 	protected := r.Group("")

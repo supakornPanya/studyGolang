@@ -1,24 +1,24 @@
-package cart
+package http
 
 import (
 	"net/http"
 	"strconv"
 	"study-golang-backend/internal/auth"
-	"study-golang-backend/internal/domain/repository"
 	"study-golang-backend/internal/domain/entity"
+	"study-golang-backend/internal/domain/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
+type CartHandler struct {
 	repo repository.CartRepository
 }
 
-func NewHandler(repo repository.CartRepository) *Handler {
-	return &Handler{repo: repo}
+func NewCartHandler(repo repository.CartRepository) *CartHandler {
+	return &CartHandler{repo: repo}
 }
 
-func (h *Handler) RegisterRouter(rg *gin.RouterGroup) {
+func (h *CartHandler) RegisterRouter(rg *gin.RouterGroup) {
 	items := rg.Group("/items")
 	{
 		items.POST("/", auth.RequirePermission("can_write"), h.CreateItem)
@@ -41,7 +41,7 @@ func (h *Handler) RegisterRouter(rg *gin.RouterGroup) {
 // @Failure      500      {object}  map[string]string "Internal Server Error"
 // @Security     BearerAuth
 // @Router       /items [post]
-func (h *Handler) CreateItem(c *gin.Context) {
+func (h *CartHandler) CreateItem(c *gin.Context) {
 	var payload entity.CreateItemPayload
 
 	// Check Error from request
@@ -77,7 +77,7 @@ func (h *Handler) CreateItem(c *gin.Context) {
 // @Failure      500  {object}  map[string]string "Internal Server Error"
 // @Security     BearerAuth
 // @Router       /items [get]
-func (h *Handler) GetAllItems(c *gin.Context) {
+func (h *CartHandler) GetAllItems(c *gin.Context) {
 	items, err := h.repo.GetAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "Internal Server Error", "message": err.Error()})
@@ -97,7 +97,7 @@ func (h *Handler) GetAllItems(c *gin.Context) {
 // @Failure      404  {object}  map[string]string "Not Found"
 // @Security     BearerAuth
 // @Router       /items/{id} [get]
-func (h *Handler) GetItemByID(c *gin.Context) {
+func (h *CartHandler) GetItemByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -125,7 +125,7 @@ func (h *Handler) GetItemByID(c *gin.Context) {
 // @Failure      404  {object}  map[string]string "Not Found"
 // @Security     BearerAuth
 // @Router       /items/{id} [put]
-func (h *Handler) UpdateItem(c *gin.Context) {
+func (h *CartHandler) UpdateItem(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -156,7 +156,7 @@ func (h *Handler) UpdateItem(c *gin.Context) {
 // @Failure      404  {object}  map[string]string "Not Found"
 // @Security     BearerAuth
 // @Router       /items/{id} [delete]
-func (h *Handler) DeleteItem(c *gin.Context) {
+func (h *CartHandler) DeleteItem(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {

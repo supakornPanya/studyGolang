@@ -1,4 +1,4 @@
-package user
+package http
 
 import (
 	"crypto/rand"
@@ -7,26 +7,27 @@ import (
 	"study-golang-backend/internal/auth"
 	"study-golang-backend/internal/domain/entity"
 	"study-golang-backend/internal/domain/repository"
+	"study-golang-backend/internal/user"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Handler dependency
-type Handler struct {
+type UserHandler struct {
 	repo repository.UserRepository
 	secret []byte
 }
 
 // Dependency Injection
-func NewHandler(repo repository.UserRepository, secret []byte) *Handler {
-	return &Handler{
+func NewUserHandler(repo repository.UserRepository, secret []byte) *UserHandler {
+	return &UserHandler{
 		repo: repo,
 		secret: secret,
 	}
 }
 
 // RegisterRouter
-func (h *Handler) RegisterRouter(r *gin.RouterGroup) {
+func (h *UserHandler) RegisterRouter(r *gin.RouterGroup) {
 	r.POST("register", h.Register)
 	r.POST("login", h.Login)
 }
@@ -48,7 +49,7 @@ type authRequest struct {
 // @Failure      400      {object}  map[string]string
 // @Failure      500      {object}  map[string]string
 // @Router       /register [post]
-func (h *Handler) Register(c *gin.Context) {
+func (h *UserHandler) Register(c *gin.Context) {
 	var req authRequest
 
 	// Bind and validate request body
@@ -61,7 +62,7 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 
 	// Get Hash password
-	hash, err := HashPassword(req.Password)
+	hash, err := user.HashPassword(req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "Internal Server Error", "message": err.Error()})
 		return
@@ -110,7 +111,7 @@ func (h *Handler) Register(c *gin.Context) {
 // @Failure      401      {object}  map[string]string
 // @Failure      500      {object}  map[string]string
 // @Router       /login [post]
-func (h *Handler) Login(c *gin.Context) {
+func (h *UserHandler) Login(c *gin.Context) {
 	var req authRequest
 
 	// Validate Json
@@ -124,7 +125,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 	// Fetch user from DB -> Check password
 	u, err := h.repo.GetByUsername(req.Username)
-	if err != nil || !CheckPassword(req.Password, u.PasswordHash){
+	if err != nil || !user.CheckPassword(req.Password, u.PasswordHash){
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status": "Unauthorized",
 			"message": "Invalid username or password",
