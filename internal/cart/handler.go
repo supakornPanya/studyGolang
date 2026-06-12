@@ -4,15 +4,17 @@ import (
 	"net/http"
 	"strconv"
 	"study-golang-backend/internal/auth"
+	"study-golang-backend/internal/domain/repository"
+	"study-golang-backend/internal/domain/entity"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	repo Repository
+	repo repository.CartRepository
 }
 
-func NewHandler(repo Repository) *Handler {
+func NewHandler(repo repository.CartRepository) *Handler {
 	return &Handler{repo: repo}
 }
 
@@ -40,7 +42,7 @@ func (h *Handler) RegisterRouter(rg *gin.RouterGroup) {
 // @Security     BearerAuth
 // @Router       /items [post]
 func (h *Handler) CreateItem(c *gin.Context) {
-	var payload CreateItemPayload
+	var payload entity.CreateItemPayload
 
 	// Check Error from request
 	// c.ShouldBindJSON is set value of payload but if error return to err not nil
@@ -117,8 +119,8 @@ func (h *Handler) GetItemByID(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "Item ID"
-// @Param        request  body      UpdateItemPayload  true  "Updated item details"
-// @Success      200  {object}  Item
+// @Param        request  body      entity.UpdateItemPayload  true  "Updated item details"
+// @Success      200  {object}  	entity.Item
 // @Failure      400  {object}  map[string]string "Bad Request"
 // @Failure      404  {object}  map[string]string "Not Found"
 // @Security     BearerAuth
@@ -130,7 +132,7 @@ func (h *Handler) UpdateItem(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Bad Request", "message": "Invalid ID format"})
 		return
 	}
-	var payload UpdateItemPayload
+	var payload entity.UpdateItemPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Bad Request", "message": err.Error()})
 		return

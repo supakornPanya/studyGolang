@@ -1,4 +1,4 @@
-package cart
+package entity
 
 // Create a struct for items
 type Item struct {

@@ -5,18 +5,20 @@ import (
 	"encoding/base64"
 	"net/http"
 	"study-golang-backend/internal/auth"
+	"study-golang-backend/internal/domain/entity"
+	"study-golang-backend/internal/domain/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Handler dependency
 type Handler struct {
-	repo Repository
+	repo repository.UserRepository
 	secret []byte
 }
 
 // Dependency Injection
-func NewHandler(repo Repository, secret []byte) *Handler {
+func NewHandler(repo repository.UserRepository, secret []byte) *Handler {
 	return &Handler{
 		repo: repo,
 		secret: secret,
@@ -71,7 +73,7 @@ func (h *Handler) Register(c *gin.Context) {
 	id := base64.StdEncoding.EncodeToString(b)
 
 	// Create User entity
-	user := &User{
+	user := &entity.User{
 		ID: id,
 		Username: req.Username,
 		PasswordHash: hash,

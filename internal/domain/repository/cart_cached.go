@@ -1,35 +1,36 @@
-package cart
+package repository
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"study-golang-backend/internal/domain/entity"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-type CachedRepository struct {
-	postgresRepo Repository
+type CartCachedRepository struct {
+	postgresRepo CartRepository
 	redisClient  *redis.Client
 	ctx          context.Context
 }
 
 // NewCachedRepository for warps and return value
-func NewCachedRepository(postgresRepo Repository, redisClient *redis.Client) Repository {
-	return &CachedRepository{
+func NewCartCachedRepository(postgresRepo CartRepository, redisClient *redis.Client) CartRepository {
+	return &CartCachedRepository{
 		postgresRepo: postgresRepo,
 		redisClient:  redisClient,
 		ctx:          context.Background(),
 	}
 }
 
-func (r *CachedRepository) getCacheKey(id int) string {
+func (r *CartCachedRepository) getCacheKey(id int) string {
 	return fmt.Sprintf("item: %d", id)
 }
 
 // Create
-func (r *CachedRepository) Create(sku string, name string, qty int, price float64) (*Item, error) {
+func (r *CartCachedRepository) Create(sku string, name string, qty int, price float64) (*entity.Item, error) {
 	item, err := r.postgresRepo.Create(sku, name, qty, price)
 	if err != nil {
 		return nil, err
@@ -50,19 +51,19 @@ func (r *CachedRepository) Create(sku string, name string, qty int, price float6
 }
 
 // GetAll
-func (r *CachedRepository) GetAll() ([]*Item, error) {
+func (r *CartCachedRepository) GetAll() ([]*entity.Item, error) {
 	return r.postgresRepo.GetAll()
 }
 
 // GetByID
-func (r *CachedRepository) GetByID(id int) (*Item, error) {
+func (r *CartCachedRepository) GetByID(id int) (*entity.Item, error) {
 	key := r.getCacheKey(id)
 
 	val, err := r.redisClient.Get(r.ctx, key).Result()
 
 	// Cache hit -> return data from redis
 	if err == nil {
-		var item Item
+		var item entity.Item
 		if err := json.Unmarshal([]byte(val), &item); err == nil {
 			return &item, nil
 		}
@@ -85,7 +86,7 @@ func (r *CachedRepository) GetByID(id int) (*Item, error) {
 }
 
 // Update
-func (r *CachedRepository) Update(id int, sku string, name string, qty int, price float64) (*Item, error) {
+func (r *CartCachedRepository) Update(id int, sku string, name string, qty int, price float64) (*entity.Item, error) {
 	// Update the SQL database
 	item, err := r.postgresRepo.Update(id, sku, name, qty, price)
 	if err != nil {
@@ -99,7 +100,7 @@ func (r *CachedRepository) Update(id int, sku string, name string, qty int, pric
 }
 
 // Delete
-func (r *CachedRepository) Delete(id int) error {
+func (r *CartCachedRepository) Delete(id int) error {
 	err := r.postgresRepo.Delete(id)
 	if err != nil {
 		return err

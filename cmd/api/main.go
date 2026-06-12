@@ -8,6 +8,8 @@ import (
 	"study-golang-backend/internal/db"
 	"study-golang-backend/internal/logger"
 	"study-golang-backend/internal/user"
+	"study-golang-backend/internal/domain/entity"
+	"study-golang-backend/internal/domain/repository"
 
 	_ "study-golang-backend/docs"
 
@@ -37,12 +39,12 @@ func main() {
 	// Initialize Database
 	// Auto Migrate database: Check has this table yes->skip, no->create
 	database := db.InitDB()
-	err = database.AutoMigrate(&user.User{})
+	err = database.AutoMigrate(&entity.User{})
 	if err != nil {
 		slog.Error("Failed to auto migrate database", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
-	err = database.AutoMigrate(&cart.Item{})
+	err = database.AutoMigrate(&entity.Item{})
 	if err != nil {
 		slog.Error("Failed to auto migrate database", slog.String("error", err.Error()))
 		os.Exit(1)
@@ -64,14 +66,14 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Initial User
-	userRepo := user.NewPostgresRepository(database)
+	userRepo := repository.NewUserPostgreRepository(database)
 	userHandler := user.NewHandler(userRepo, jwtSecret)
 	userHandler.RegisterRouter(r.Group(""))
 
 	// Initial Cart
 	rdbClient := db.InitRedis()
-	postresCartRepo := cart.NewPostgresRepository(database)
-	cartRepo := cart.NewCachedRepository(postresCartRepo, rdbClient)
+	postresCartRepo := repository.NewCartPostgresRepository(database)
+	cartRepo := repository.NewCartCachedRepository(postresCartRepo, rdbClient)
 	// Initial Handler & inject initial Data(cartRepo)
 	cartHandler := cart.NewHandler(cartRepo)
 
