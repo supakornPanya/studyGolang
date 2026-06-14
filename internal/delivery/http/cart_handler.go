@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 	"strconv"
-	"study-golang-backend/internal/auth"
+	"study-golang-backend/internal/delivery/http/middleware"
 	"study-golang-backend/internal/domain/entity"
 	"study-golang-backend/internal/domain/repository"
 
@@ -21,11 +21,11 @@ func NewCartHandler(repo repository.CartRepository) *CartHandler {
 func (h *CartHandler) RegisterRouter(rg *gin.RouterGroup) {
 	items := rg.Group("/items")
 	{
-		items.POST("/", auth.RequirePermission("can_write"), h.CreateItem)
-		items.GET("/", auth.RequirePermission("can_read"), h.GetAllItems)
-		items.GET("/:id", auth.RequirePermission("can_read"), h.GetItemByID)
-		items.PUT("/:id", auth.RequirePermission("can_update"), h.UpdateItem)
-		items.DELETE("/:id", auth.RequirePermission("can_delete"), h.DeleteItem)
+		items.POST("/", middleware.RequirePermission("can_write"), h.CreateItem)
+		items.GET("/", middleware.RequirePermission("can_read"), h.GetAllItems)
+		items.GET("/:id", middleware.RequirePermission("can_read"), h.GetItemByID)
+		items.PUT("/:id", middleware.RequirePermission("can_update"), h.UpdateItem)
+		items.DELETE("/:id", middleware.RequirePermission("can_delete"), h.DeleteItem)
 	}
 }
 

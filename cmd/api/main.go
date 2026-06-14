@@ -3,16 +3,17 @@ package main
 import (
 	"log/slog"
 	"os"
-	"study-golang-backend/internal/auth"
 	"study-golang-backend/internal/db"
-	"study-golang-backend/internal/logger"
-	"study-golang-backend/internal/domain/entity"
-	"study-golang-backend/internal/domain/repository"
 	"study-golang-backend/internal/delivery/http"
+	"study-golang-backend/internal/delivery/http/middleware"
+	"study-golang-backend/internal/domain/entity"
+	"study-golang-backend/internal/infrastructure"
+	"study-golang-backend/internal/repository"
 
 	_ "study-golang-backend/docs"
 
 	_ "study-golang-backend/docs"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
@@ -59,7 +60,7 @@ func main() {
 
 	//Init Gin router & Register logger middleware
 	r := gin.New()
-	r.Use(logger.LoggerMiddleware(), gin.Recovery())
+	r.Use(middleware.LoggerMiddleware(), gin.Recovery())
 
 	// Swagger Documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -77,7 +78,7 @@ func main() {
 
 	// Register Router secured by AuthMiddleware
 	protected := r.Group("")
-	protected.Use(auth.AuthMiddleware(jwtSecret))
+	protected.Use(middleware.AuthMiddleware(jwtSecret))
 	cartHandler.RegisterRouter(protected)
 
 	r.Run(":8080")

@@ -4,10 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
-	"study-golang-backend/internal/auth"
 	"study-golang-backend/internal/domain/entity"
 	"study-golang-backend/internal/domain/repository"
-	"study-golang-backend/internal/user"
+	"study-golang-backend/pkg/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -62,7 +61,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 	}
 
 	// Get Hash password
-	hash, err := user.HashPassword(req.Password)
+	hash, err := auth.HashPassword(req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "Internal Server Error", "message": err.Error()})
 		return
@@ -125,7 +124,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 
 	// Fetch user from DB -> Check password
 	u, err := h.repo.GetByUsername(req.Username)
-	if err != nil || !user.CheckPassword(req.Password, u.PasswordHash){
+	if err != nil || !auth.CheckPassword(req.Password, u.PasswordHash){
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status": "Unauthorized",
 			"message": "Invalid username or password",

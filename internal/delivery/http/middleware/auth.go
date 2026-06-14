@@ -1,8 +1,9 @@
-package auth
+package middleware
 
 import (
 	"net/http"
 	"strings"
+	"study-golang-backend/pkg/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,7 +28,7 @@ func AuthMiddleware(secret []byte) gin.HandlerFunc {
 		}
 
 		// Validate token
-		claims, err := ValidateToken(parts[1], secret)
+		claims, err := auth.ValidateToken(parts[1], secret)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "Invalid token"})
 			c.Abort()

@@ -5,19 +5,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"study-golang-backend/internal/domain/entity"
+	"study-golang-backend/internal/domain/repository"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
 type CartCachedRepository struct {
-	postgresRepo CartRepository
+	postgresRepo repository.CartRepository
 	redisClient  *redis.Client
 	ctx          context.Context
 }
 
 // NewCachedRepository for warps and return value
-func NewCartCachedRepository(postgresRepo CartRepository, redisClient *redis.Client) CartRepository {
+func NewCartCachedRepository(postgresRepo repository.CartRepository, redisClient *redis.Client) repository.CartRepository {
 	return &CartCachedRepository{
 		postgresRepo: postgresRepo,
 		redisClient:  redisClient,
