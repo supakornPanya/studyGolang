@@ -2,7 +2,6 @@ package repository
 
 import (
 	"study-golang-backend/internal/domain/entity"
-	"study-golang-backend/internal/domain/repository"
 	"gorm.io/gorm"
 )
 
@@ -11,7 +10,7 @@ type CartPostgresRepository struct {
 }
 
 // func return db
-func NewCartPostgresRepository(db *gorm.DB) repository.CartRepository {
+func NewCartPostgresRepository(db *gorm.DB) *CartPostgresRepository {
 	return &CartPostgresRepository{db: db}
 }
 

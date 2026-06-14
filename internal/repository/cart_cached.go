@@ -12,13 +12,13 @@ import (
 )
 
 type CartCachedRepository struct {
-	postgresRepo repository.CartRepository
+	postgresRepo *CartPostgresRepository
 	redisClient  *redis.Client
 	ctx          context.Context
 }
 
 // NewCachedRepository for warps and return value
-func NewCartCachedRepository(postgresRepo repository.CartRepository, redisClient *redis.Client) repository.CartRepository {
+func NewCartCachedRepository(postgresRepo *CartPostgresRepository, redisClient *redis.Client) repository.CartRepository {
 	return &CartCachedRepository{
 		postgresRepo: postgresRepo,
 		redisClient:  redisClient,
