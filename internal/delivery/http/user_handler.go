@@ -1,9 +1,8 @@
 package http
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"net/http"
+	"strconv"
 	"study-golang-backend/internal/domain/entity"
 	"study-golang-backend/internal/domain/repository"
 	"study-golang-backend/pkg/auth"
@@ -67,20 +66,14 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 	
-	// Generate random unique ID
-	b := make([]byte, 8)
-	_, _ = rand.Read(b)
-	id := base64.StdEncoding.EncodeToString(b)
-
 	// Create User entity
 	user := &entity.User{
-		ID: id,
-		Username: req.Username,
+		Username:     req.Username,
 		PasswordHash: hash,
-		CanRead: true,
-		CanWrite: false,
-		CanUpdate: false,
-		CanDelete: false,
+		CanRead:      true,
+		CanWrite:     false,
+		CanUpdate:    false,
+		CanDelete:    false,
 	}
 
 	// Save user
@@ -133,7 +126,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	}
 
 	// Generate token from json
-	token, err := auth.GenerateToken(u.Username, u.ID, u.CanRead, u.CanWrite, u.CanUpdate, u.CanDelete, h.secret)
+	token, err := auth.GenerateToken(u.Username, strconv.FormatUint(u.ID, 10), u.CanRead, u.CanWrite, u.CanUpdate, u.CanDelete, h.secret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "Internal Server Error",

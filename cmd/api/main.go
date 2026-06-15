@@ -6,7 +6,6 @@ import (
 
 	"study-golang-backend/internal/db"
 	delivery "study-golang-backend/internal/delivery/http"
-	"study-golang-backend/internal/domain/entity"
 	"study-golang-backend/internal/infrastructure/logger"
 	"study-golang-backend/internal/repository"
 
@@ -30,40 +29,34 @@ import (
 // @name            Authorization
 // @description     Type "Bearer " followed by your JWT token.
 func main() {
-	fx.New(
-		// 1. Group all our modules together
-		db.Module,
-		repository.Module,
-		delivery.Module,
-		// 2. Invoke setup tasks (Logger, Env, Migrations, Swagger)
-		fx.Invoke(
-			setupEnvAndLogger,
-			runMigrations,
-			setupSwagger,
-		),
-	).Run()
-}
-// setupEnvAndLogger loads environment variables and sets up the logger
-func setupEnvAndLogger() {
+	// 1. load environment variables
 	logger.InitLogger()
 	err := godotenv.Load()
 	if err != nil {
 		slog.Warn("No .env file found")
 	}
+
+	fx.New(
+		// 2. Group all our modules together
+		db.Module,
+		repository.Module,
+		delivery.Module,
+		// 3. Invoke setup tasks (Migrations, Swagger)
+		fx.Invoke(
+			runMigrations,
+			setupSwagger,
+		),
+	).Run()
 }
+
 // runMigrations automatically migrates the GORM tables
 func runMigrations(database *gorm.DB) {
-	err := database.AutoMigrate(&entity.User{})
-	if err != nil {
-		slog.Error("Failed to auto migrate User database", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
-	err = database.AutoMigrate(&entity.Item{})
-	if err != nil {
-		slog.Error("Failed to auto migrate Item database", slog.String("error", err.Error()))
+	if err := db.RunMigrations(database); err != nil {
+		slog.Error("Failed to run database migrations", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 }
+
 // setupSwagger registers the Swagger endpoint
 func setupSwagger(r *gin.Engine) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
