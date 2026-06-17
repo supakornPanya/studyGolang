@@ -2,7 +2,6 @@ package main
 
 import (
 	"log/slog"
-	"os"
 
 	"study-golang-backend/internal/db"
 	delivery "study-golang-backend/internal/delivery/http"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"gorm.io/gorm"
 	"go.uber.org/fx"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -43,18 +41,9 @@ func main() {
 		delivery.Module,
 		// 3. Invoke setup tasks (Migrations, Swagger)
 		fx.Invoke(
-			runMigrations,
 			setupSwagger,
 		),
 	).Run()
-}
-
-// runMigrations automatically migrates the GORM tables
-func runMigrations(database *gorm.DB) {
-	if err := db.RunMigrations(database); err != nil {
-		slog.Error("Failed to run database migrations", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
 }
 
 // setupSwagger registers the Swagger endpoint

@@ -4,13 +4,13 @@ import "time"
 
 // Create a struct for items
 type Item struct {
-	ID        int       `json:"id"`
-	SKU       string    `json:"sku"`
-	Name      string    `json:"name"`
-	Quantity  int       `json:"quantity"`
-	Price     float64   `json:"price"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID          int       `gorm:"primaryKey;autoIncrement" json:"id"`
+	SKU         string    `json:"sku"`
+	Name        string    `json:"name"`
+	Quantity    int       `json:"quantity"`
+	Price       float64   `json:"price"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // Create template for payload that is json can't using in code like a struct
