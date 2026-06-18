@@ -19,7 +19,7 @@ func NewProductHandler(repo repository.ProductRepository) *ProductHandler {
 }
 
 // getOwnerByID get user_id from product
-func (h *ProductHandler) getOwnerByID(id int) (string, error) {
+func (h *ProductHandler) getOwnerByID(id uint64) (string, error) {
 	product, err := h.repo.GetByID(id)
 	if err != nil {
 		return "", err
@@ -70,14 +70,10 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 	userIDStrVal, _ := userIDStr.(string)
-	userID, err := strconv.ParseUint(userIDStrVal, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "Invalid User ID format"})
-		return
-	}
+	payload.CreatedBy, _ = strconv.ParseUint(userIDStrVal, 10, 64)
 
 	// Create
-	newProduct, err := h.repo.Create(payload.SKU, payload.Name, payload.Description, payload.Stock, payload.Price, payload.Category, payload.Tag, userID)
+	newProduct, err := h.repo.Create(payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "Internal Server Error", "message": err.Error()})
 		return
@@ -127,7 +123,7 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Bad Request", "message": "Invalid ID format"})
 		return
 	}
-	product, err := h.repo.GetByID(id)
+	product, err := h.repo.GetByID(uint64(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"status": "Not Found", "message": err.Error()})
 		return
@@ -151,7 +147,7 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	// Check id is number
 	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Bad Request", "message": "Invalid ID format"})
 		return
@@ -165,7 +161,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	}
 
 	// Update
-	updated, err := h.repo.Update(id, payload.SKU, payload.Name, payload.Description, payload.Stock, payload.Price, payload.Category, payload.Tag)
+	updated, err := h.repo.Update(id, payload)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"status": "Not Found", "message": err.Error()})
 		return
@@ -191,7 +187,7 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Bad Request", "message": "Invalid ID format"})
 		return
 	}
-	if err := h.repo.Delete(id); err != nil {
+	if err := h.repo.Delete(uint64(id)); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"status": "Not Found", "message": err.Error()})
 		return
 	}

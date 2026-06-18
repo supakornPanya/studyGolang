@@ -4,7 +4,7 @@ import "time"
 
 // Create a struct for cart
 type CartItems struct {
-	ID            int       `gorm:"primaryKey;autoIncrement" json:"id"`
+	ID            uint64       `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserID        uint64    `gorm:"uniqueIndex;not null" json:"user_id"`
 	ListProductID []uint64  `gorm:"type:json;not null" json:"product_id"`
 	CreatedAt     time.Time `json:"created_at"`

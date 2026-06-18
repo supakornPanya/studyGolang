@@ -45,7 +45,7 @@ func AuthMiddleware(secret []byte) gin.HandlerFunc {
 }
 
 // Check Permission: Check permissionRequired & checkOwnership by getOwnerByID
-func RequirePermission(permissionRequired string, roleToCheckOwnership string, getOwnerByID func(id int) (string, error)) gin.HandlerFunc {
+func RequirePermission(permissionRequired string, roleToCheckOwnership string, getOwnerByID func(id uint64) (string, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get Role from context
 		roleVal, exists := c.Get("role")
@@ -86,7 +86,7 @@ func RequirePermission(permissionRequired string, roleToCheckOwnership string, g
 		listRoles := strings.Split(roleToCheckOwnership, ", ")
 		for _, role := range listRoles {
 			if strings.EqualFold(roleStr, role) {
-				// get id param
+				// get id param http.../:id
 				idStr := c.Param("id")
 				id, err := strconv.Atoi(idStr)
 				if err != nil {
@@ -95,7 +95,7 @@ func RequirePermission(permissionRequired string, roleToCheckOwnership string, g
 					return
 				}
 				// get id from query
-				ownerID, err := getOwnerByID(id)
+				ownerID, err := getOwnerByID(uint64(id))
 				if err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{"status": "Internal Server Error", "message": "Failed to get owner"})
 					c.Abort()

@@ -1,7 +1,6 @@
-// package repository
+package repository
 
 // import (
-// 	"context"
 // 	"encoding/json"
 // 	"fmt"
 // 	"study-golang-backend/internal/domain/entity"
@@ -11,27 +10,21 @@
 // 	"github.com/redis/go-redis/v9"
 // )
 
-// type CartCachedRepository struct {
-// 	postgresRepo *CartPostgresRepository
+// type CartRepository struct {
 // 	redisClient  *redis.Client
-// 	ctx          context.Context
 // }
 
 // // NewCachedRepository for warps and return value
-// func NewCartCachedRepository(postgresRepo *CartPostgresRepository, redisClient *redis.Client) repository.ProductRepository {
-// 	return &CartCachedRepository{
-// 		postgresRepo: postgresRepo,
-// 		redisClient:  redisClient,
-// 		ctx:          context.Background(),
-// 	}
+// func NewCartRepository(redisClient *redis.Client) repository.CartRepository {
+// 	return &CartRepository{redisClient:redisClient}
 // }
 
-// func (r *CartCachedRepository) getCacheKey(id int) string {
+// func (r *CartRepository) getCacheKey(id int) string {
 // 	return fmt.Sprintf("item: %d", id)
 // }
 
 // // Create
-// func (r *CartCachedRepository) Create(sku string, name string, qty int, price float64) (*entity.Item, error) {
+// func (r *CartRepository) Create(sku string, name string, qty int, price float64) (*entity.Item, error) {
 // 	item, err := r.postgresRepo.Create(sku, name, qty, price)
 // 	if err != nil {
 // 		return nil, err
@@ -51,13 +44,8 @@
 // 	return item, nil
 // }
 
-// // GetAll
-// func (r *CartCachedRepository) GetAll() ([]*entity.Item, error) {
-// 	return r.postgresRepo.GetAll()
-// }
-
 // // GetByID
-// func (r *CartCachedRepository) GetByID(id int) (*entity.Item, error) {
+// func (r *CartRepository GetByID(id int) (*entity.Item, error) {
 // 	key := r.getCacheKey(id)
 
 // 	val, err := r.redisClient.Get(r.ctx, key).Result()
@@ -86,6 +74,11 @@
 // 	return item, nil
 // }
 
+// // GetAll
+// func (r *CartRepository) GetAll() ([]*entity.Item, error) {
+// 	return r.postgresRepo.GetAll()
+// }
+
 // // Update
 // func (r *CartCachedRepository) Update(id int, sku string, name string, qty int, price float64) (*entity.Item, error) {
 // 	// Update the SQL database
@@ -112,4 +105,3 @@
 // 	r.redisClient.Del(r.ctx, key)
 // 	return nil
 // }
-package repository
