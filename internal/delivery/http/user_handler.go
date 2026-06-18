@@ -12,14 +12,14 @@ import (
 
 // Handler dependency
 type UserHandler struct {
-	repo repository.UserRepository
+	repo   repository.UserRepository
 	secret []byte
 }
 
 // Dependency Injection
 func NewUserHandler(repo repository.UserRepository, secret []byte) *UserHandler {
 	return &UserHandler{
-		repo: repo,
+		repo:   repo,
 		secret: secret,
 	}
 }
@@ -53,7 +53,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 	// Bind and validate request body
 	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "Bad Request",
+			"status":  "Bad Request",
 			"message": err.Error(),
 		})
 		return
@@ -65,33 +65,30 @@ func (h *UserHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "Internal Server Error", "message": err.Error()})
 		return
 	}
-	
+
 	// Create User entity
 	user := &entity.User{
 		Username:     req.Username,
 		PasswordHash: hash,
-		CanRead:      true,
-		CanWrite:     false,
-		CanUpdate:    false,
-		CanDelete:    false,
+		Role:         "customer",
 	}
 
 	// Save user
 	if err := h.repo.Create(user); err != nil {
 		c.JSON(http.StatusConflict, gin.H{
-			"status": "Internal Server Error",
+			"status":  "Internal Server Error",
 			"message": err.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"status": "Created",
+		"status":  "Created",
 		"message": "User created successfully",
 	})
 }
 
-// Login handler 
+// Login handler
 // @Summary      Login
 // @Description  Logs in a user and returns an authentication token
 // @Tags         users
@@ -110,33 +107,33 @@ func (h *UserHandler) Login(c *gin.Context) {
 	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status": "Bad Request",
-			"error": err.Error(),
+			"error":  err.Error(),
 		})
 		return
 	}
 
 	// Fetch user from DB -> Check password
 	u, err := h.repo.GetByUsername(req.Username)
-	if err != nil || !auth.CheckPassword(req.Password, u.PasswordHash){
+	if err != nil || !auth.CheckPassword(req.Password, u.PasswordHash) {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"status": "Unauthorized",
+			"status":  "Unauthorized",
 			"message": "Invalid username or password",
 		})
 		return
 	}
 
 	// Generate token from json
-	token, err := auth.GenerateToken(u.Username, strconv.FormatUint(u.ID, 10), u.CanRead, u.CanWrite, u.CanUpdate, u.CanDelete, h.secret)
+	token, err := auth.GenerateToken(u.Username, strconv.FormatUint(u.ID, 10), u.Role, h.secret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "Internal Server Error",
+			"status":  "Internal Server Error",
 			"message": err.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "Ok",
+		"status":  "Ok",
 		"message": "Login successfully",
 		"data": gin.H{
 			"token": token,

@@ -11,22 +11,16 @@ import (
 type Claims struct {
 	Username  string `json:"username"`
 	UserID    string `json:"user_id"`
-	CanRead   bool   `json:"can_read"`
-	CanWrite  bool   `json:"can_write"`
-	CanUpdate bool   `json:"can_update"`
-	CanDelete bool   `json:"can_delete"`
+	Role      string `json:"role"`
 	jwt.RegisteredClaims
 }
 
 // GenerateToken
-func GenerateToken(username, userID string, canRead, canWrite, canUpdate, canDelete bool, secret []byte) (string, error) {
+func GenerateToken(username, userID string, role string, secret []byte) (string, error) {
 	claims := &Claims{
 		Username: username,
 		UserID:   userID,
-		CanRead:   canRead,
-		CanWrite:  canWrite,
-		CanUpdate: canUpdate,
-		CanDelete: canDelete,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			//Set expire token
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),

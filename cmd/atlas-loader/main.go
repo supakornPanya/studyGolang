@@ -16,7 +16,10 @@ func main() {
 	// Load entities struct
 	stmts, err := loader.Load(
 		&entity.User{},
-		&entity.Item{},
+		&entity.Product{},
+		&entity.Tag{},
+		&entity.Category{},
+		&entity.CartItems{},
 	)
 
 	if err != nil {

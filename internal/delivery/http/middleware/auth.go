@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"study-golang-backend/pkg/auth"
 
@@ -35,35 +36,94 @@ func AuthMiddleware(secret []byte) gin.HandlerFunc {
 			return
 		}
 
-		// Injection clams
+		// Injection clams into context
 		c.Set("username", claims.Username)
 		c.Set("user_id", claims.UserID)
-		c.Set("can_read", claims.CanRead)
-		c.Set("can_write", claims.CanWrite)
-		c.Set("can_update", claims.CanUpdate)
-		c.Set("can_delete", claims.CanDelete)
+		c.Set("role", claims.Role)
 		c.Next()
 	}
 }
 
-// Check Permission
-func RequirePermission(permissionKey string) gin.HandlerFunc {
+// Check Permission: Check permissionRequired & checkOwnership by getOwnerByID
+func RequirePermission(permissionRequired string, roleToCheckOwnership string, getOwnerByID func(id int) (string, error)) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Read permission key
-		val, exists := c.Get(permissionKey)
+		// Get Role from context
+		roleVal, exists := c.Get("role")
 		if !exists {
-			c.JSON(http.StatusForbidden, gin.H{"status": "Forbidden", "message": "Required permission not found"})
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "User role not found in context"})
+			c.Abort()
+			return
+		}
+		roleStr, ok := roleVal.(string)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "Invalid User role format"})
 			c.Abort()
 			return
 		}
 
-		// Check permission
-		allowed, ok := val.(bool)
-		if !ok || !allowed {
-			c.JSON(http.StatusForbidden, gin.H{"status": "Forbidden", "message": "Insufficient permissions"})
+		// 1. Check role in permissionRequired
+		allowed := false
+		roles := strings.Split(permissionRequired, ", ")
+		for _, role := range roles {
+			if strings.EqualFold(roleStr, role) {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			c.JSON(http.StatusForbidden, gin.H{"status": "Forbidden", "message": "Insufficient permissions. Requires one of: " + permissionRequired})
 			c.Abort()
 			return
 		}
+
+		// 2. Check this permission need owner?
+		// 2.1 no roleToCheckOwnership
+		if roleToCheckOwnership == "" {
+			c.Next()
+			return
+		}
+		// 2.2 has permission -> this role need owner?
+		listRoles := strings.Split(roleToCheckOwnership, ", ")
+		for _, role := range listRoles {
+			if strings.EqualFold(roleStr, role) {
+				// get id param
+				idStr := c.Param("id")
+				id, err := strconv.Atoi(idStr)
+				if err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"status": "Bad Request", "message": "Invalid ID format"})
+					c.Abort()
+					return
+				}
+				// get id from query
+				ownerID, err := getOwnerByID(id)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"status": "Internal Server Error", "message": "Failed to get owner"})
+					c.Abort()
+					return
+				}
+				// get user_id from context
+				userIDVal, exists := c.Get("user_id")
+				if !exists {
+					c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "User ID not found in context"})
+					c.Abort()
+					return
+				}
+				userIDStr, ok := userIDVal.(string)
+				if !ok {
+					c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "Invalid User ID format"})
+					c.Abort()
+					return
+				}
+				// check if user is owner
+				if userIDStr != ownerID {
+					c.JSON(http.StatusForbidden, gin.H{"status": "Forbidden", "message": "Insufficient permissions. Requires ownership"})
+					c.Abort()
+					return
+				}				
+			}
+		}
+
+		// role not need check owner -> pass
 		c.Next()
 	}
 }
