@@ -35,6 +35,8 @@ func RunServer(
 	userHandler *UserHandler,
 	productHandler *ProductHandler,
 	cartHandler *CartHandler,
+	categoryHandler *CategoryHandler,
+	tagHandler *TagHandler,
 ) {
 	// Register user public routes
 	userHandler.RegisterRouter(r.Group(""))
@@ -49,6 +51,16 @@ func RunServer(
 	cartProtected := r.Group("")
 	cartProtected.Use(middleware.AuthMiddleware(jwtSecret))
 	cartHandler.RegisterRouter(cartProtected)
+
+	// Register category protected routes
+	categoryProtected := r.Group("")
+	categoryProtected.Use(middleware.AuthMiddleware(jwtSecret))
+	categoryHandler.RegisterRouter(categoryProtected)
+
+	// Register tag protected routes
+	tagProtected := r.Group("")
+	tagProtected.Use(middleware.AuthMiddleware(jwtSecret))
+	tagHandler.RegisterRouter(tagProtected)
 
 	// Define HTTP server
 	srv := &http.Server{
@@ -82,6 +94,8 @@ var Module = fx.Module("http",
 		NewUserHandler,
 		NewProductHandler,
 		NewCartHandler,
+		NewCategoryHandler,
+		NewTagHandler,
 	),
 	fx.Invoke(RunServer),
 )

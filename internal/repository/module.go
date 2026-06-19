@@ -9,5 +9,7 @@ var Module = fx.Module("repository",
 		NewUserPostgreRepository,
 		NewProductPostgresRepository,
 		NewCartRepository,
+		NewCategoryPostgresRepository,
+		NewTagPostgresRepository,
 	),
 )

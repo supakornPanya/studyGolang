@@ -45,7 +45,7 @@ func (h *CartHandler) AddCart(c *gin.Context) {
 
 	// Check payload
 	var payload struct {
-		ProductID []uint64 `json:"product_id"binding:"required"`
+		ProductID []uint64 `json:"product_id" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Bad Request", "message": err.Error()})
