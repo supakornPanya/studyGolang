@@ -4,9 +4,7 @@ import (
 )
 
 type CartRepository interface {
-	Create(cart *entity.CartItems) (*entity.CartItems, error)
-	GetByID(id uint64) (*entity.CartItems, error)
-	GetAll() ([]*entity.CartItems, error)
-	Update(id uint64, cart *entity.CartItems) (*entity.CartItems, error)
-	Delete(id uint64) error
+	Save(id int, cart *entity.CartItems) (*entity.CartItems, error)
+	GetByID(id int) (*entity.CartItems, error)
+	Delete(id int) error
 }

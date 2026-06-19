@@ -7,7 +7,7 @@ import (
 var Module = fx.Module("repository",
 	fx.Provide(
 		NewUserPostgreRepository,
-		// NewCartCachedRepository,
 		NewProductPostgresRepository,
+		NewCartRepository,
 	),
 )

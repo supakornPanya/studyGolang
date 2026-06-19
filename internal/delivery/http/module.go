@@ -34,6 +34,7 @@ func RunServer(
 	r *gin.Engine,
 	userHandler *UserHandler,
 	productHandler *ProductHandler,
+	cartHandler *CartHandler,
 ) {
 	// Register user public routes
 	userHandler.RegisterRouter(r.Group(""))
@@ -43,6 +44,11 @@ func RunServer(
 	protected := r.Group("")
 	protected.Use(middleware.AuthMiddleware(jwtSecret))
 	productHandler.RegisterRouter(protected)
+
+	// Register cart protected routes
+	cartProtected := r.Group("")
+	cartProtected.Use(middleware.AuthMiddleware(jwtSecret))
+	cartHandler.RegisterRouter(cartProtected)
 
 	// Define HTTP server
 	srv := &http.Server{
@@ -75,6 +81,7 @@ var Module = fx.Module("http",
 		NewGinEngine,
 		NewUserHandler,
 		NewProductHandler,
+		NewCartHandler,
 	),
 	fx.Invoke(RunServer),
 )

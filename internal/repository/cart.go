@@ -1,107 +1,88 @@
 package repository
 
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"study-golang-backend/internal/domain/entity"
-// 	"study-golang-backend/internal/domain/repository"
-// 	"time"
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"study-golang-backend/internal/domain/entity"
+	"study-golang-backend/internal/domain/repository"
+	"time"
 
-// 	"github.com/redis/go-redis/v9"
-// )
+	"github.com/redis/go-redis/v9"
+)
 
-// type CartRepository struct {
-// 	redisClient  *redis.Client
-// }
+type CartRepository struct {
+	redisClient *redis.Client
+	ctx         context.Context
+}
 
-// // NewCachedRepository for warps and return value
-// func NewCartRepository(redisClient *redis.Client) repository.CartRepository {
-// 	return &CartRepository{redisClient:redisClient}
-// }
+// NewCachedRepository for warps and return value
+func NewCartRepository(redisClient *redis.Client) repository.CartRepository {
+	return &CartRepository{
+		redisClient: redisClient,
+		ctx:         context.Background(),
+	}
+}
 
-// func (r *CartRepository) getCacheKey(id int) string {
-// 	return fmt.Sprintf("item: %d", id)
-// }
+// Helper for format query in redis
+func (r *CartRepository) getCacheKey(id int) string {
+	return fmt.Sprintf("cart: %d", id)
+}
 
-// // Create
-// func (r *CartRepository) Create(sku string, name string, qty int, price float64) (*entity.Item, error) {
-// 	item, err := r.postgresRepo.Create(sku, name, qty, price)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+// Save
+func (r *CartRepository) Save(id int, cart *entity.CartItems) (*entity.CartItems, error) {
+	// Crate key
+	key := r.getCacheKey(id)
 
-// 	// Crate cache
-// 	key := r.getCacheKey(item.ID)
+	// Tracking Time
+	if cart.CreatedAt.IsZero() {
+		cart.CreatedAt = time.Now()
+	}
+	cart.UpdatedAt = time.Now()
 
-// 	// Convert the Item struct into a JSON string
-// 	data, err := json.Marshal(item)
-// 	err = r.redisClient.Set(r.ctx, key, data, 1*time.Minute).Err()
+	// Convert the CartItems struct into a JSON string
+	data, err := json.Marshal(cart)
+	if err != nil {
+		return nil, err
+	}
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	// Set data to redis with expiry time
+	err = r.redisClient.Set(r.ctx, key, data, 1*time.Minute).Err()
 
-// 	return item, nil
-// }
+	if err != nil {
+		return nil, err
+	}
 
-// // GetByID
-// func (r *CartRepository GetByID(id int) (*entity.Item, error) {
-// 	key := r.getCacheKey(id)
+	return cart, nil
+}
 
-// 	val, err := r.redisClient.Get(r.ctx, key).Result()
+// GetByID
+func (r *CartRepository) GetByID(id int) (*entity.CartItems, error) {
+	key := r.getCacheKey(id)
 
-// 	// Cache hit -> return data from redis
-// 	if err == nil {
-// 		var item entity.Item
-// 		if err := json.Unmarshal([]byte(val), &item); err == nil {
-// 			return &item, nil
-// 		}
-// 	}
+	// Get value from cache
+	val, err := r.redisClient.Get(r.ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return &entity.CartItems{
+			UserID: int(id),
+			ListProductID: []uint64{},
+		}, nil
+	} else if err != nil {
+		return nil, err	
+	}
 
-// 	// Cache miss
-// 	item, err := r.postgresRepo.GetByID(id)
+	// Get value from cache and convert to CartItems struct
+	var item entity.CartItems
+	if err := json.Unmarshal([]byte(val), &item); err == nil {
+		return &item, nil
+	}
 
-// 	// Return error
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	return nil, err
+}
 
-// 	// Set data to redis
-// 	data, err := json.Marshal(item)
-// 	if err == nil {
-// 		_ = r.redisClient.Set(r.ctx, key, data, 5*time.Minute).Err()
-// 	}
-// 	return item, nil
-// }
-
-// // GetAll
-// func (r *CartRepository) GetAll() ([]*entity.Item, error) {
-// 	return r.postgresRepo.GetAll()
-// }
-
-// // Update
-// func (r *CartCachedRepository) Update(id int, sku string, name string, qty int, price float64) (*entity.Item, error) {
-// 	// Update the SQL database
-// 	item, err := r.postgresRepo.Update(id, sku, name, qty, price)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// Delete old cahe
-// 	key := r.getCacheKey(id)
-// 	r.redisClient.Del(r.ctx, key)
-// 	return item, nil
-// }
-
-// // Delete
-// func (r *CartCachedRepository) Delete(id int) error {
-// 	err := r.postgresRepo.Delete(id)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	// Delete old cache
-// 	key := r.getCacheKey(id)
-// 	r.redisClient.Del(r.ctx, key)
-// 	return nil
-// }
+// Delete
+func (r *CartRepository) Delete(id int) error {
+	key := r.getCacheKey(id)
+	return r.redisClient.Del(r.ctx, key).Err()
+}
