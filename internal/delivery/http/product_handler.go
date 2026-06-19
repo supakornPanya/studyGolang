@@ -30,11 +30,11 @@ func (h *ProductHandler) getOwnerByID(id uint64) (string, error) {
 func (h *ProductHandler) RegisterRouter(rg *gin.RouterGroup) {
 	product := rg.Group("/products")
 	{
-		product.POST("/", middleware.RequirePermission("admin, seller", "", nil), h.CreateProduct)
-		product.GET("/", middleware.RequirePermission("admin, seller, customer", "", nil), h.GetAllProducts)
-		product.GET("/:id", middleware.RequirePermission("admin, seller, customer", "", nil), h.GetProductByID)
-		product.PUT("/:id", middleware.RequirePermission("admin, seller", "seller", h.getOwnerByID), h.UpdateProduct)
-		product.DELETE("/:id", middleware.RequirePermission("admin, seller", "seller", h.getOwnerByID), h.DeleteProduct)
+		product.POST("/", middleware.RequirePermission("admin, seller"), h.CreateProduct)
+		product.GET("/", middleware.RequirePermission("admin, seller, customer"), h.GetAllProducts)
+		product.GET("/:id", middleware.RequirePermission("admin, seller, customer"), h.GetProductByID)
+		product.PUT("/:id", middleware.RequirePermission("admin, seller"), middleware.RequireOwnership("seller", h.getOwnerByID), h.UpdateProduct)
+		product.DELETE("/:id", middleware.RequirePermission("admin, seller"), middleware.RequireOwnership("seller", h.getOwnerByID), h.DeleteProduct)
 	}
 }
 

@@ -44,8 +44,8 @@ func AuthMiddleware(secret []byte) gin.HandlerFunc {
 	}
 }
 
-// Check Permission: Check permissionRequired & checkOwnership by getOwnerByID
-func RequirePermission(permissionRequired string, roleToCheckOwnership string, getOwnerByID func(id uint64) (string, error)) gin.HandlerFunc {
+// Check Permission: Check permissionRequired this user has this role
+func RequirePermission(permissionRequired string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get Role from context
 		roleVal, exists := c.Get("role")
@@ -76,16 +76,31 @@ func RequirePermission(permissionRequired string, roleToCheckOwnership string, g
 			return
 		}
 
-		// 2. Check this permission need owner?
-		// 2.1 no roleToCheckOwnership
-		if roleToCheckOwnership == "" {
-			c.Next()
+		c.Next()
+	}
+}
+
+// Check Ownership: Check this permission need owner by getOwnerByID
+func RequireOwnership(roleToCheckOwnership string, getOwnerByID func(id uint64) (string, error)) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get Role from context
+		roleVal, exists := c.Get("role")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "User role not found in context"})
+			c.Abort()
 			return
 		}
-		// 2.2 has permission -> this role need owner?
-		listRoles := strings.Split(roleToCheckOwnership, ", ")
-		for _, role := range listRoles {
-			if strings.EqualFold(roleStr, role) {
+		roleStr, ok := roleVal.(string)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "Invalid User role format"})
+			c.Abort()
+			return
+		}
+
+		// Check this permission need owner?
+		listRolesOwnership := strings.Split(roleToCheckOwnership, ", ")
+		for _, role := range listRolesOwnership {
+			if strings.EqualFold(roleStr, strings.TrimSpace(role)) {
 				// get id param http.../:id
 				idStr := c.Param("id")
 				id, err := strconv.Atoi(idStr)
@@ -119,11 +134,11 @@ func RequirePermission(permissionRequired string, roleToCheckOwnership string, g
 					c.JSON(http.StatusForbidden, gin.H{"status": "Forbidden", "message": "Insufficient permissions. Requires ownership"})
 					c.Abort()
 					return
-				}				
+				}
 			}
 		}
 
-		// role not need check owner -> pass
+		// not has in role that requier ownership
 		c.Next()
 	}
 }

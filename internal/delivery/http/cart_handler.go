@@ -17,12 +17,11 @@ func NewCartHandler(repo repository.CartRepository) *CartHandler {
 	return &CartHandler{repo: repo}
 }
 
-
 func (h *CartHandler) RegisterRouter(rg *gin.RouterGroup) {
 	cart := rg.Group("/cart")
 	{
-		cart.POST("/add", middleware.RequirePermission("admin, seller, customer", "", nil), h.AddCart)
-		cart.GET("/", middleware.RequirePermission("admin, seller, customer", "", nil), h.GetCart)
+		cart.POST("/add", middleware.RequirePermission("admin, seller, customer"), h.AddCart)
+		cart.GET("/", middleware.RequirePermission("admin, seller, customer"), h.GetCart)
 	}
 }
 
@@ -44,7 +43,7 @@ func (h *CartHandler) AddCart(c *gin.Context) {
 	userIDStr := userIDVal.(string)
 	userID, _ := strconv.Atoi(userIDStr)
 
-	// Check payload 
+	// Check payload
 	var payload struct {
 		ProductID []uint64 `json:"product_id"binding:"required"`
 	}
