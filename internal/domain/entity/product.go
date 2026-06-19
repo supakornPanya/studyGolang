@@ -8,8 +8,8 @@ type Product struct {
 	Description string   `gorm:"not null" json:"description"`
 	Price       float64  `gorm:"not null" json:"price"`
 	Stock       int      `gorm:"not null" json:"stock"`
-	Category    []uint64 `gorm:"type:json" json:"category"`
-	Tag         []uint64 `gorm:"type:json" json:"tag"`
+	Category    []uint64 `gorm:"type:json;serializer:json" json:"category"`
+	Tag         []uint64 `gorm:"type:json;serializer:json" json:"tag"`
 	CreatedBy   uint64   `gorm:"not null" json:"created_by"`
 }
 
