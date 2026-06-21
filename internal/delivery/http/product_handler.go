@@ -33,8 +33,8 @@ func (h *ProductHandler) RegisterRouter(rg *gin.RouterGroup) {
 		product.POST("/", middleware.RequirePermission("admin, seller"), h.CreateProduct)
 		product.GET("/", middleware.RequirePermission("admin, seller, customer"), h.GetAllProducts)
 		product.GET("/:id", middleware.RequirePermission("admin, seller, customer"), h.GetProductByID)
-		product.PUT("/:id", middleware.RequirePermission("admin, seller"), middleware.RequireOwnership("seller", h.getOwnerByID), h.UpdateProduct)
-		product.DELETE("/:id", middleware.RequirePermission("admin, seller"), middleware.RequireOwnership("seller", h.getOwnerByID), h.DeleteProduct)
+		product.PUT("/:id", middleware.RequirePermission("admin, seller"), h.UpdateProduct)
+		product.DELETE("/:id", middleware.RequirePermission("admin, seller"), h.DeleteProduct)
 	}
 }
 
@@ -160,8 +160,19 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
+	// Get userID and role from context
+	userIDStr, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "User ID not found in context"})
+		return
+	}
+	userIDStrVal, _ := userIDStr.(string)
+	userID, _ := strconv.ParseUint(userIDStrVal, 10, 64)
+	role, _ := c.Get("role")
+	roleStr, _ := role.(string)
+
 	// Update
-	updated, err := h.repo.Update(id, payload)
+	updated, err := h.repo.Update(id, payload, userID, roleStr)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"status": "Not Found", "message": err.Error()})
 		return
@@ -187,7 +198,19 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Bad Request", "message": "Invalid ID format"})
 		return
 	}
-	if err := h.repo.Delete(uint64(id)); err != nil {
+
+	// Get userID and role from context
+	userIDStr, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized", "message": "User ID not found in context"})
+		return
+	}
+	userIDStrVal, _ := userIDStr.(string)
+	userID, _ := strconv.ParseUint(userIDStrVal, 10, 64)
+	role, _ := c.Get("role")
+	roleStr, _ := role.(string)
+
+	if err := h.repo.Delete(uint64(id), userID, roleStr); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"status": "Not Found", "message": err.Error()})
 		return
 	}

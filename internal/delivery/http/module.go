@@ -24,7 +24,7 @@ func ProvideJWTSecret() []byte {
 // NewGinEngine initializes Gin with middlewares
 func NewGinEngine() *gin.Engine {
 	r := gin.New()
-	r.Use(middleware.LoggerMiddleware(), gin.Recovery())
+	r.Use(middleware.LoggerMiddleware(), middleware.CORSMiddleware(), gin.Recovery())
 	return r
 }
 
